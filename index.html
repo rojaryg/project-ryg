@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Short-Term Goals Calendar ✦</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ── FLOWTASK DESIGN SYSTEM ── */
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --card: #1c1c1c;
+            --border: #272727;
+            --border-light: #333333;
+            --text: #efefef;
+            --text-muted: #555555;
+            --text-mid: #999999;
+            --accent: #efefef;
+            --accent-glow: rgba(239,239,239,0.10);
+            --flow: #ffffff;
+            --flow-glow: rgba(255,255,255,0.15);
+            --flow-dim: rgba(255,255,255,0.07);
+            --success: #4caf82;
+            --danger: #e05252;
+            --radius: 14px;
+            --radius-sm: 9px;
+            --lived: #333333;
+        }
+
+        body[data-theme="light"] {
+            --bg: #e2e0dc;
+            --surface: #eceae6;
+            --card: #ffffff;
+            --border: #d0ceca;
+            --border-light: #c0beba;
+            --text: #141414;
+            --text-muted: #9a9892;
+            --text-mid: #4a4845;
+            --accent: #141414;
+            --accent-glow: rgba(20,20,20,0.08);
+            --flow: #141414;
+            --flow-glow: rgba(20,20,20,0.18);
+            --flow-dim: rgba(0,0,0,0.07);
+            --success: #2f8b66;
+            --danger: #c94040;
+            --lived: #c0beba;
+        }
+
+        body[data-theme="miku"] {
+            --bg: #FFF0F7;
+            --surface: #f2fcfb;
+            --card: #ffffff;
+            --border: #99D5D0;
+            --border-light: #BCE8E4;
+            --text: #1A2B2A;
+            --text-muted: #007871;
+            --text-mid: #005D57;
+            --accent: #E3007F;
+            --accent-glow: rgba(227,0,127,0.14);
+            --flow: #00C4B6;
+            --flow-glow: rgba(0,196,182,0.30);
+            --flow-dim: rgba(0,196,182,0.15);
+            --success: #00a898;
+            --danger: #d04b4b;
+            --lived: #BCE8E4;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            transition: background 0.3s, color 0.3s;
+            scrollbar-width: none;
+        }
+        body::-webkit-scrollbar { display: none; }
+
+        /* ── NAVBAR (BOTTOM FIXED) ── */
+        nav {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+            background: var(--surface); border-top: 1px solid var(--border);
+            padding: 0 40px; height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        }
+        .nav-logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); letter-spacing: -0.02em; }
+        .nav-divider { width: 1px; height: 18px; background: var(--border-light); margin: 0 4px; }
+        
+        .theme-btn {
+            background: var(--card); border: 1px solid var(--border); color: var(--text-mid);
+            font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500; padding: 5px 12px;
+            border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease; letter-spacing: 0.02em;
+        }
+        .theme-btn:hover { border-color: var(--border-light); color: var(--text); }
+        .theme-btn.active { background: var(--flow-dim); border-color: var(--flow); color: var(--text); }
+
+        /* ── MAIN CONTENT ── */
+        #main {
+            flex: 1; display: flex; flex-direction: column; padding-bottom: 80px;
+            transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+            will-change: transform;
+        }
+
+        .main-header { padding: 36px 40px 20px; text-align: center; animation: fadeUp 0.6s ease forwards; }
+        .main-header h2 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+        .main-header p { font-family: 'Inter', sans-serif; font-size: 0.9rem; color: var(--text-muted); }
+
+        .calendar-container {
+            width: 100%; max-width: 1100px; margin: 0 auto; padding: 20px 40px 40px;
+            display: flex; justify-content: center; overflow-x: auto;
+            animation: fadeUp 0.6s ease forwards 0.1s; opacity: 0; scrollbar-width: none;
+        }
+        .calendar-container::-webkit-scrollbar { display: none; }
+
+        .grid { display: grid; grid-template-columns: 50px repeat(52, 16px); gap: 6px; }
+
+        .axis-label { font-family: 'Space Grotesk', sans-serif; font-size: 0.65rem; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+        .y-label { justify-content: flex-end; padding-right: 12px; font-weight: 600; color: var(--text-mid); }
+
+        .week-box {
+            width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 3px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: crosshair; position: relative;
+        }
+        .week-box:hover { transform: scale(1.5); z-index: 10; border-color: var(--text); box-shadow: 0 0 15px rgba(0,0,0,0.2); }
+        .week-box.lived { background-color: var(--lived); border-color: var(--lived); }
+        .week-box.current { border: 2px solid var(--accent); box-shadow: 0 0 8px var(--accent-glow); z-index: 5;}
+        .marker { width: 6px; height: 6px; background: var(--bg); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 4px rgba(0,0,0,0.2); }
+
+        /* ── BOTTOM SHEET DRAWER ── */
+        .drawer-overlay { display: none; }
+
+        .bottom-drawer {
+            position: fixed;
+            bottom: 52px; /* tepat di atas navbar */
+            left: 0;
+            right: 0;
+            transform: translateY(calc(100% + 52px)); /* tersembunyi penuh di bawah */
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            border-radius: 20px 20px 0 0;
+            z-index: 90;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
+            pointer-events: none;
+            transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+        .bottom-drawer.open { pointer-events: auto; transform: translateY(0); }
+
+        .drawer-handle-container { padding: 14px 0 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .drawer-handle { width: 40px; height: 4px; background: var(--border-light); border-radius: 4px; }
+        .drawer-handle-container:hover .drawer-handle { background: var(--text-muted); }
+
+        .drawer-content-inner { padding: 10px 32px 32px; max-height: 60vh; overflow-y: auto; scrollbar-width: none; }
+        .drawer-content-inner::-webkit-scrollbar { display: none; }
+
+        /* ── SECTIONS INSIDE DRAWER ── */
+        .panel-section { display: none; flex-direction: column; animation: fadeIn 0.3s ease; }
+        .panel-section.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); font-weight: 600; margin-bottom: 14px; display: block; }
+        
+        input, select {
+            width: 100%; padding: 12px 16px; background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); color: var(--text); font-family: 'Inter', sans-serif;
+            font-size: 0.85rem; outline: none; transition: border-color 0.2s, background 0.3s ease;
+            margin-bottom: 12px; text-align: center;
+        }
+        input:focus, select:focus { border-color: var(--accent); }
+        input[type="color"] { padding: 2px; height: 44px; cursor: pointer; }
+
+        .btn-group { display: flex; gap: 10px; width: 100%; margin-bottom: 16px; flex-wrap: wrap; }
+        
+        .btn-primary { background: var(--accent); color: var(--bg); border: none; padding: 12px 20px; border-radius: var(--radius-sm); font-weight: 600; font-family: 'Inter', sans-serif; font-size: 0.85rem; cursor: pointer; transition: transform 0.1s, background 0.3s; flex: 1; }
+        .btn-primary:active { transform: scale(0.98); }
+        
+        .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 12px 20px; border-radius: var(--radius-sm); font-family: 'Inter', sans-serif; font-weight: 500; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; flex: 1; }
+        .btn-secondary:hover { border-color: var(--border-light); background: var(--surface); }
+        .btn-secondary.active-mode { border-color: var(--flow); color: var(--flow); background: var(--flow-dim); }
+
+        .list-container { flex: 1; overflow-y: auto; text-align: left; scrollbar-width: none; }
+        .list-container::-webkit-scrollbar { display: none; }
+
+        .data-item, .filter-item { background: var(--card); border: 1px solid var(--border); padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; transition: border-color 0.2s; }
+        .data-item:hover, .filter-item:hover { border-color: var(--border-light); }
+        
+        .data-item .info { display: flex; flex-direction: column; gap: 4px; }
+        .data-item .title { font-weight: 500; color: var(--text); font-size: 0.95rem; }
+        .data-item .subtitle { font-size: 0.8rem; color: var(--text-muted); }
+        .data-item .actions { display: flex; gap: 12px; }
+        .data-item button { background: none; border: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; transition: color 0.2s; }
+        .data-item button:hover { color: var(--text); }
+        
+        .filter-item { justify-content: flex-start; gap: 12px; cursor: pointer; }
+        .filter-item input { width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--flow); }
+        .filter-item span { font-size: 0.9rem; color: var(--text); }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- TOOLTIP --- */
+        #tooltip { position: fixed; background: var(--surface); border: 1px solid var(--border-light); color: var(--text); padding: 12px 16px; border-radius: var(--radius-sm); font-size: 0.8rem; pointer-events: none; opacity: 0; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.4); transition: opacity 0.2s; line-height: 1.5; }
+
+        @media (max-width: 768px) { nav, .calendar-container { padding-left: 16px; padding-right: 16px; } .calendar-container { justify-content: flex-start; } }
+        @media (min-width: 769px) { .drawer-content-inner { max-width: 860px; margin: 0 auto; } }
+    </style>
+</head>
+<body data-theme="miku">
+
+<main id="main">
+    <header class="main-header">
+        <h2 id="header-weeks">156 Weeks</h2>
+        <p>Progres: <span id="stat-lived" style="color: var(--text); font-weight: 600;">0</span> • Sisa Minggu: <span id="stat-rem" style="font-weight: 600;">0</span></p>
+    </header>
+
+    <div class="calendar-container">
+        <div class="grid-scroll-wrapper">
+            <div class="grid" id="calendarGrid"></div>
+        </div>
+    </div>
+</main>
+
+<div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+
+<div class="bottom-drawer" id="bottomDrawer">
+    <div class="drawer-handle-container" onclick="closeDrawer()">
+        <div class="drawer-handle"></div>
+    </div>
+    <div class="drawer-content-inner">
+        
+        <div id="setupPanel" class="panel-section">
+            <label class="section-label">Timeline Setup</label>
+            <select id="timeframeSelect">
+                <option value="1">1 Tahun (52 Minggu)</option>
+                <option value="3">3 Tahun (156 Minggu)</option>
+                <option value="5">5 Tahun (260 Minggu)</option>
+            </select>
+            <input type="date" id="startDateInput" title="Tanggal Mulai">
+            
+            <hr style="border:0; border-top:1px solid var(--border); margin: 16px 0 24px;">
+            
+            <label class="section-label">Filter Tampilan</label>
+            <div id="filterList" class="list-container" style="max-height: 180px;"></div>
+        </div>
+
+        <div id="addPanel" class="panel-section">
+            <label class="section-label" id="form-title">Tambah Target / Event</label>
+            <div class="btn-group">
+                <button id="btnModePhase" class="btn-secondary active-mode" onclick="addPhaseMode()">Fase (Rentang)</button>
+                <button id="btnModeEvent" class="btn-secondary" onclick="addEventMode()">Event (Tepat)</button>
+            </div>
+            
+            <input type="text" id="phaseName" placeholder="Nama Target (Contoh: Skripsi)">
+            <div style="display: flex; gap: 12px;">
+                <input type="number" id="startWeek" placeholder="Mulai (M ke-)">
+                <input type="number" id="endWeek" placeholder="Selesai (M ke-)">
+            </div>
+            <input type="color" id="phaseColor" value="#00C4B6">
+            
+            <div class="btn-group" style="margin-top: 8px; margin-bottom: 0;">
+                <button class="btn-primary" id="btnSubmitPhase" onclick="submitPhase()">Simpan Data</button>
+                <button id="btnCancelEdit" class="btn-secondary" style="display: none;" onclick="cancelEdit()">Batal</button>
+            </div>
+        </div>
+
+        <div id="listPanel" class="panel-section">
+            <label class="section-label">Data Tersimpan</label>
+            <div id="dataList" class="list-container" style="max-height: 260px;"></div>
+        </div>
+
+    </div>
+</div>
+
+<nav>
+    <span class="nav-logo">Hub ✦</span>
+    <div class="nav-divider"></div>
+    
+    <button class="theme-btn tab-btn" id="tab-setup" onclick="switchTab('setupPanel')">Setup</button>
+    <button class="theme-btn tab-btn" id="tab-add" onclick="switchTab('addPanel')">Tambah</button>
+    <button class="theme-btn tab-btn" id="tab-list" onclick="switchTab('listPanel')">Roadmap</button>
+    
+    <div class="nav-divider"></div>
+    <button class="theme-btn" onclick="toggleFullscreen()">Fullscreen</button>
+    <div class="nav-divider"></div>
+    
+    <button class="theme-btn" data-theme-btn="dark" onclick="setTheme('dark', this)">Dark</button>
+    <button class="theme-btn" data-theme-btn="light" onclick="setTheme('light', this)">Light</button>
+    <button class="theme-btn active" data-theme-btn="miku" onclick="setTheme('miku', this)">Miku</button>
+</nav>
+
+<div id="tooltip"></div>
+
+<script>
+    // --- STATE ---
+    const defaultData = {
+        startDate: new Date().toISOString().split('T')[0],
+        timeframe: 3,
+        theme: 'miku',
+        items: [
+            { id: 1, type: 'phase', name: 'Fokus Riset & Perkuliahan', startWeek: 1, endWeek: 40, color: '#00C4B6' },
+            { id: 2, type: 'phase', name: 'Membangun Karir Data', startWeek: 41, endWeek: 104, color: '#E3007F' },
+            { id: 3, type: 'event', name: 'Target Submit Proposal', week: 25, color: '#ffffff' }
+        ]
+    };
+
+    let appData = JSON.parse(localStorage.getItem('myGoalCalendar_v5')) || defaultData;
+    let hiddenIds = new Set();
+    let editId = null;
+    let currentMode = 'phase';
+    let activeTab = null;
+
+    // --- INIT ---
+    function init() {
+        document.getElementById('startDateInput').value = appData.startDate;
+        document.getElementById('timeframeSelect').value = appData.timeframe;
+        
+        document.getElementById('startDateInput').onchange = (e) => { appData.startDate = e.target.value; save(); render(); };
+        document.getElementById('timeframeSelect').onchange = (e) => { appData.timeframe = parseInt(e.target.value); save(); render(); };
+
+        const activeThemeBtn = document.querySelector(`[data-theme-btn="${appData.theme}"]`) || document.querySelector('[data-theme-btn="miku"]');
+        setTheme(appData.theme || 'miku', activeThemeBtn);
+        addPhaseMode();
+        render();
+    }
+
+    // --- BOTTOM DRAWER LOGIC ---
+    function switchTab(panelId) {
+        const drawer = document.getElementById('bottomDrawer');
+        const main = document.getElementById('main');
+
+        if (drawer.classList.contains('open') && activeTab === panelId) {
+            closeDrawer();
+            return;
+        }
+
+        // Tampilkan konten yang sesuai dulu (supaya height bisa diukur)
+        document.querySelectorAll('.panel-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(panelId).classList.add('active');
+
+        drawer.classList.add('open');
+        activeTab = panelId;
+
+        // Push main ke atas sebesar tinggi drawer yang muncul
+        requestAnimationFrame(() => {
+            main.style.transform = `translateY(-${drawer.offsetHeight}px)`;
+        });
+
+        // Jika drawer sudah buka dan ganti tab — re-measure setelah konten render
+        if (drawer.classList.contains('open')) {
+            setTimeout(() => {
+                main.style.transform = `translateY(-${drawer.offsetHeight}px)`;
+            }, 50);
+        }
+
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + panelId.replace('Panel', '').toLowerCase()).classList.add('active');
+    }
+
+    function closeDrawer() {
+        document.getElementById('bottomDrawer').classList.remove('open');
+        document.getElementById('main').style.transform = '';
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        activeTab = null;
+        if(editId) cancelEdit();
+    }
+
+    // --- DATE CALCULATION FOR TOOLTIP ---
+    function getWeekDateRange(startStr, weekNum) {
+        if (!startStr) return "Tanggal belum diatur";
+        const start = new Date(startStr);
+        const weekStart = new Date(start.getTime() + (weekNum - 1) * 7 * 24 * 60 * 60 * 1000);
+        const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+        const options = { day: 'numeric', month: 'short', year: 'numeric' };
+        return `${weekStart.toLocaleDateString('id-ID', options)} - ${weekEnd.toLocaleDateString('id-ID', options)}`;
+    }
+
+    // --- CORE LOGIC ---
+    function getStats() {
+        const start = new Date(appData.startDate);
+        const today = new Date();
+        const diff = today - start;
+        
+        if (diff < 0) return { lived: 0, total: appData.timeframe * 52, rem: appData.timeframe * 52 };
+
+        const livedWeeks = Math.floor(diff / (1000 * 60 * 60 * 24 * 7));
+        const totalWeeks = appData.timeframe * 52;
+        const finalLived = Math.min(livedWeeks, totalWeeks);
+        return { lived: finalLived, total: totalWeeks, rem: totalWeeks - finalLived };
+    }
+
+    function render() {
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = '';
+        const stats = getStats();
+        
+        document.getElementById('header-weeks').innerText = `${stats.total} Weeks`;
+        document.getElementById('stat-lived').innerText = stats.lived.toLocaleString();
+        document.getElementById('stat-rem').innerText = stats.rem.toLocaleString();
+
+        grid.appendChild(createDiv('axis-label', ''));
+        for (let w = 1; w <= 52; w++) { grid.appendChild(createDiv('axis-label', w % 5 === 0 || w === 1 ? w : '')); }
+
+        let currentTotalWeek = 1;
+        for (let y = 0; y < appData.timeframe; y++) {
+            grid.appendChild(createDiv('axis-label y-label', `Thn ${y + 1}`));
+
+            for (let w = 1; w <= 52; w++) {
+                const box = document.createElement('div');
+                box.className = 'week-box';
+                
+                if (currentTotalWeek <= stats.lived) box.classList.add('lived');
+                if (currentTotalWeek === stats.lived + 1) box.classList.add('current');
+
+                let bgColor = '';
+                const dateRangeStr = getWeekDateRange(appData.startDate, currentTotalWeek);
+                let tooltipContent = `
+                    <div style="font-weight: 600; margin-bottom: 2px;">Tahun ${y + 1}, Minggu ke-${w}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-mid); margin-bottom: 6px;">Total Minggu: ${currentTotalWeek} <br/> ${dateRangeStr}</div>
+                `;
+
+                const activePhase = appData.items.find(i => i.type === 'phase' && currentTotalWeek >= i.startWeek && currentTotalWeek <= i.endWeek && !hiddenIds.has(i.id));
+                if (activePhase) {
+                    bgColor = activePhase.color;
+                    tooltipContent += `<div style="color:${bgColor}; font-weight: 500; margin-top: 4px;">✦ ${activePhase.name}</div>`;
+                }
+
+                const activeEvent = appData.items.find(i => i.type === 'event' && i.week == currentTotalWeek && !hiddenIds.has(i.id));
+                if (activeEvent) {
+                    box.innerHTML = '<div class="marker"></div>';
+                    tooltipContent += `<div style="margin-top: 4px;">📍 <b>${activeEvent.name}</b></div>`;
+                }
+
+                if (bgColor) box.style.backgroundColor = bgColor;
+
+                box.onmouseenter = (e) => showTooltip(e, tooltipContent);
+                box.onmouseleave = hideTooltip;
+
+                grid.appendChild(box);
+                currentTotalWeek++;
+            }
+        }
+        renderDataList();
+        renderFilters();
+    }
+
+    function createDiv(cls, txt) { const d = document.createElement('div'); d.className = cls; d.innerText = txt; return d; }
+
+    // --- UI INTERACTIONS ---
+    function showTooltip(e, content) {
+        const tip = document.getElementById('tooltip'); tip.innerHTML = content; tip.style.opacity = '1'; updateTooltipPos(e);
+    }
+
+    function updateTooltipPos(e) {
+        const tip = document.getElementById('tooltip');
+        let x = e.clientX + 15; let y = e.clientY - 50;
+        if (x + tip.offsetWidth > window.innerWidth) x = e.clientX - tip.offsetWidth - 15;
+        tip.style.left = x + 'px'; tip.style.top = y + 'px';
+    }
+
+    function setTheme(theme, btn) {
+        document.body.setAttribute('data-theme', theme);
+        appData.theme = theme; save();
+        document.querySelectorAll('[data-theme-btn]').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+    }
+
+    function updateModeButtons() {
+        document.getElementById('btnModePhase').classList.toggle('active-mode', currentMode === 'phase');
+        document.getElementById('btnModeEvent').classList.toggle('active-mode', currentMode === 'event');
+    }
+
+    function addEventMode() {
+        currentMode = 'event'; updateModeButtons();
+        document.getElementById('startWeek').placeholder = "Minggu ke-?";
+        document.getElementById('endWeek').style.display = "none";
+    }
+
+    function addPhaseMode() {
+        currentMode = 'phase'; updateModeButtons();
+        document.getElementById('startWeek').placeholder = "Mulai (M ke-)";
+        document.getElementById('endWeek').style.display = "block";
+    }
+
+    function cancelEdit() {
+        editId = null; addPhaseMode();
+        document.getElementById('phaseName').value = '';
+        document.getElementById('startWeek').value = '';
+        document.getElementById('endWeek').value = '';
+        document.getElementById('btnSubmitPhase').innerText = "Simpan Data";
+        document.getElementById('btnCancelEdit').style.display = 'none';
+    }
+
+    function submitPhase() {
+        const name = document.getElementById('phaseName').value;
+        const val1 = parseInt(document.getElementById('startWeek').value);
+        const val2 = parseInt(document.getElementById('endWeek').value);
+        const color = document.getElementById('phaseColor').value;
+
+        if (!name || isNaN(val1)) return;
+
+        const newItem = { id: editId || Date.now(), type: currentMode, name, color };
+
+        if (currentMode === 'phase') {
+            if (isNaN(val2)) return;
+            newItem.startWeek = val1; newItem.endWeek = val2;
+        } else {
+            newItem.week = val1;
+        }
+
+        if (editId) {
+            const idx = appData.items.findIndex(i => i.id === editId);
+            appData.items[idx] = newItem;
+        } else {
+            appData.items.push(newItem);
+        }
+
+        save(); cancelEdit(); render(); switchTab('listPanel'); 
+    }
+
+    function editItem(id) {
+        const item = appData.items.find(i => i.id === id);
+        editId = id; currentMode = item.type;
+        
+        document.getElementById('phaseName').value = item.name;
+        document.getElementById('phaseColor').value = item.color;
+        document.getElementById('btnCancelEdit').style.display = 'block';
+        document.getElementById('btnSubmitPhase').innerText = "Update Data";
+
+        if (item.type === 'phase') {
+            addPhaseMode();
+            document.getElementById('startWeek').value = item.startWeek;
+            document.getElementById('endWeek').value = item.endWeek;
+        } else {
+            addEventMode();
+            document.getElementById('startWeek').value = item.week;
+        }
+        switchTab('addPanel');
+    }
+
+    function deleteItem(id) { appData.items = appData.items.filter(i => i.id !== id); save(); render(); }
+    function toggleFilter(id) { if (hiddenIds.has(id)) hiddenIds.delete(id); else hiddenIds.add(id); render(); }
+
+    function renderDataList() {
+        const list = document.getElementById('dataList');
+        list.innerHTML = '';
+        if(appData.items.length === 0) {
+            list.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Belum ada target tersimpan.</div>`;
+            return;
+        }
+        appData.items.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'data-item';
+            let detailText = item.type === 'phase' ? `(M ${item.startWeek}-${item.endWeek})` : `(Minggu ${item.week})`;
+            el.innerHTML = `
+                <div class="info">
+                    <span class="title"><i style="color:${item.color}; font-size:0.8rem;">●</i> ${item.name}</span>
+                    <span class="subtitle">${detailText}</span>
+                </div>
+                <div class="actions">
+                    <button onclick="editItem(${item.id})" title="Edit">✎</button>
+                    <button onclick="deleteItem(${item.id})" title="Hapus">✕</button>
+                </div>
+            `;
+            list.appendChild(el);
+        });
+    }
+
+    function renderFilters() {
+        const list = document.getElementById('filterList');
+        list.innerHTML = '';
+        appData.items.forEach(item => {
+            const label = document.createElement('label');
+            label.className = 'filter-item';
+            const checked = hiddenIds.has(item.id) ? '' : 'checked';
+            label.innerHTML = `
+                <input type="checkbox" ${checked} onchange="toggleFilter(${item.id})">
+                <span>${item.name}</span>
+            `;
+            list.appendChild(label);
+        });
+    }
+
+    function hideTooltip() { document.getElementById('tooltip').style.opacity = '0'; }
+    function save() { localStorage.setItem('myGoalCalendar_v5', JSON.stringify(appData)); }
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+    }
+
+    init();
+</script>
+
+</body>
+</html>
