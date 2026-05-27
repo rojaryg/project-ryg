@@ -923,7 +923,130 @@
     function saveAndRender() { localStorage.setItem(LOCAL_KEY, JSON.stringify(appData)); render(); }
     function executeClearCache() { localStorage.removeItem(LOCAL_KEY); location.reload(); }
 
-    function ghLoadCreds(){} function ghSaveCreds(){} function githubLoad(){ alert("Load triggered"); } function githubSave(){ alert("Save triggered"); }
+    // --- GITHUB SYNC LOGIC ---
+    const GH_FILE_PATH = 'calendar-data.json'; // Nama file yang akan disimpan di repo
+
+    function ghLoadCreds() {
+        document.getElementById('gh-username').value = localStorage.getItem('gh_user') || '';
+        document.getElementById('gh-repo').value = localStorage.getItem('gh_repo') || '';
+        document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
+    }
+
+    function ghSaveCreds() {
+        localStorage.setItem('gh_user', document.getElementById('gh-username').value);
+        localStorage.setItem('gh_repo', document.getElementById('gh-repo').value);
+        localStorage.setItem('gh_token', document.getElementById('gh-token').value);
+    }
+
+    async function githubLoad() {
+        const user = document.getElementById('gh-username').value.trim();
+        const repo = document.getElementById('gh-repo').value.trim();
+        const token = document.getElementById('gh-token').value.trim();
+        const statusEl = document.getElementById('gh-status');
+
+        if (!user || !repo || !token) {
+            statusEl.innerText = '⚠️ Harap isi Username, Repo, dan Token!';
+            statusEl.style.color = '#e05252';
+            return;
+        }
+
+        statusEl.innerText = '⏳ Mengambil data dari GitHub...';
+        statusEl.style.color = 'var(--text-muted)';
+
+        try {
+            const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${GH_FILE_PATH}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+
+            if (!res.ok) {
+                if (res.status === 404) throw new Error("File belum ada di repo (Belum pernah di-save).");
+                throw new Error(`Gagal memuat: ${res.statusText}`);
+            }
+
+            const data = await res.json();
+            
+            // Decode Base64 dari GitHub (aman untuk karakter unik/emoji)
+            const decodedContent = decodeURIComponent(escape(atob(data.content)));
+            
+            // Timpa appData lokal dengan data dari GitHub
+            appData = JSON.parse(decodedContent);
+            saveAndRender(); 
+            init(); // Re-init form di UI
+            
+            statusEl.innerText = '✅ Data berhasil dimuat!';
+            statusEl.style.color = '#52e08a';
+        } catch (err) {
+            statusEl.innerText = `❌ Error: ${err.message}`;
+            statusEl.style.color = '#e05252';
+        }
+    }
+
+    async function githubSave() {
+        const user = document.getElementById('gh-username').value.trim();
+        const repo = document.getElementById('gh-repo').value.trim();
+        const token = document.getElementById('gh-token').value.trim();
+        const statusEl = document.getElementById('gh-status');
+
+        if (!user || !repo || !token) {
+            statusEl.innerText = '⚠️ Harap isi Username, Repo, dan Token!';
+            statusEl.style.color = '#e05252';
+            return;
+        }
+
+        statusEl.innerText = '⏳ Menyimpan data ke GitHub...';
+        statusEl.style.color = 'var(--text-muted)';
+
+        const contentString = JSON.stringify(appData, null, 2);
+        // Encode ke Base64 (aman untuk karakter unik/emoji)
+        const encodedContent = btoa(unescape(encodeURIComponent(contentString)));
+
+        try {
+            let sha = '';
+            
+            // 1. Cek apakah file sudah ada sebelumnya untuk mendapatkan "sha" (syarat update file di GitHub)
+            const getRes = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${GH_FILE_PATH}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                sha = getData.sha;
+            } else if (getRes.status !== 404) {
+                throw new Error(`Cek file gagal: ${getRes.statusText}`);
+            }
+
+            // 2. Upload/Update file ke Repo
+            const putBody = {
+                message: `Update daily calendar data: ${new Date().toLocaleString()}`,
+                content: encodedContent
+            };
+            if (sha) putBody.sha = sha; // Tambahkan sha jika file sudah ada sebelumnya
+
+            const putRes = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${GH_FILE_PATH}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(putBody)
+            });
+
+            if (!putRes.ok) throw new Error(`Gagal menyimpan: ${putRes.statusText}`);
+
+            statusEl.innerText = '✅ Data berhasil disimpan ke Repo!';
+            statusEl.style.color = '#52e08a';
+        } catch (err) {
+            statusEl.innerText = `❌ Error: ${err.message}`;
+            statusEl.style.color = '#e05252';
+        }
+    }
 
     init();
 </script>
