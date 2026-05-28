@@ -1,6 +1,16 @@
 {
   "dob": "2006-06-07",
   "targetAge": 90,
-  "items": [],
+  "items": [
+    {
+      "id": 1779927032544,
+      "type": "event",
+      "name": "20 yrs old",
+      "color": "#ff0000",
+      "age": 20,
+      "week": 1,
+      "date": "2026-06-07"
+    }
+  ],
   "theme": "dark"
 }
