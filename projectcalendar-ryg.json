@@ -1,0 +1,27 @@
+{
+  "startDate": "2026-01-01",
+  "duration": 12,
+  "theme": "dark",
+  "items": [
+    {
+      "id": 1779890399994,
+      "type": "phase",
+      "name": "UAS Semester 2",
+      "color": "#eecc20",
+      "startDate": "2026-06-15",
+      "endDate": "2026-06-27"
+    },
+    {
+      "id": 1779890476864,
+      "type": "phase",
+      "name": "FIFA World Cup 2026",
+      "color": "#af38ff",
+      "startDate": "2026-06-12",
+      "endDate": "2026-07-20"
+    }
+  ],
+  "customOrder": [
+    1779890399994,
+    1779890476864
+  ]
+}
