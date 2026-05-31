@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Life Calendar</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" id="fp-theme" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+
     <style>
         :root {
             --bg: #0a0a0a;
@@ -114,9 +119,7 @@
         }
         .sidebar-input:focus { border-color: var(--accent); }
         
-        /* Flex grid for dual inputs (Years & Months) */
         .duration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
         .sidebar-form-actions { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-top: 4px; }
 
         .btn-primary { background: var(--accent); color: var(--bg); border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; width: 100%; transition: transform 0.1s, background 0.3s ease, color 0.3s ease; }
@@ -124,9 +127,12 @@
         .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; transition: background 0.2s, border-color 0.2s, color 0.3s ease; }
         .btn-secondary:hover { border-color: var(--border-light); }
 
+        /* FLATPICKR OVERRIDES */
+        .flatpickr-input { cursor: pointer; }
+
         /* ── LIST ── */
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-radius: 6px; transition: background 0.2s; margin-bottom: 2px; }
-        .list-item:hover { background: rgba(255,255,255,0.03); }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-radius: 6px; transition: background 0.2s; margin-bottom: 2px; }
+        .list-item:hover { background: rgba(255,255,255,0.04); }
         .event-checkbox-wrapper { display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1; overflow: hidden; padding-left: 4px; }
         .event-checkbox-input { display: none; }
         .event-checkbox-box { width: 16px; height: 16px; border-radius: 4px; border: 2px solid var(--box-color); display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
@@ -155,6 +161,16 @@
         .list-item.drag-over-bottom { border-bottom: 2px solid var(--accent); }
         .list-item.dragging { opacity: 0.35; }
 
+        /* ── RADIO GROUP DOTS ── */
+        .group-radio-dot {
+            width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--text-muted);
+            display: inline-block; transition: all 0.2s; flex-shrink: 0;
+        }
+        .group-radio-dot.active {
+            background-color: var(--accent); border-color: var(--accent);
+            box-shadow: 0 0 6px var(--accent-glow);
+        }
+
         .sidebar-bottom { padding: 8px 8px 20px; flex-shrink: 0; display: none; }
         body.sidebar-open .sidebar-bottom { display: block; padding: 8px 12px 20px; }
         .sidebar-bottom-row { display: grid; grid-template-columns: 1fr auto; gap: 4px; }
@@ -177,6 +193,7 @@
         .settings-back-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .settings-panel-title { font-size: 0.80rem; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.05em; }
         .settings-section { padding: 16px 16px 0; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+        .settings-section-child { border-bottom: none; }
         .settings-section:last-child { border-bottom: none; }
         .settings-section-label { font-size: 0.65rem; letter-spacing: 0.12em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
         
@@ -318,20 +335,26 @@
                         <input type="text" id="itemName" class="sidebar-input" placeholder="e.g., Development, Holiday...">
                     </div>
 
+                    <div class="form-field">
+                        <span class="form-label">Group / Kategori</span>
+                        <select id="itemGroupSelect" class="sidebar-input">
+                            </select>
+                    </div>
+
                     <div class="form-field" id="field-phase-dates" style="gap:8px;">
                         <div class="form-field">
                             <span class="form-label">Start Date</span>
-                            <input type="date" id="phaseStartDate" class="sidebar-input">
+                            <input type="date" id="phaseStartDate" class="sidebar-input" placeholder="Pilih Tanggal">
                         </div>
                         <div class="form-field">
                             <span class="form-label">End Date</span>
-                            <input type="date" id="phaseEndDate" class="sidebar-input">
+                            <input type="date" id="phaseEndDate" class="sidebar-input" placeholder="Pilih Tanggal">
                         </div>
                     </div>
 
                     <div class="form-field" id="field-event-date" style="display:none;">
                         <span class="form-label">Date</span>
-                        <input type="date" id="eventDate" class="sidebar-input">
+                        <input type="date" id="eventDate" class="sidebar-input" placeholder="Pilih Tanggal">
                     </div>
 
                     <div class="form-field">
@@ -345,6 +368,25 @@
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Back
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <div class="accordion" id="acc-groups-manage">
+                <div class="accordion-header" onclick="toggleAccordion('acc-groups-manage')">
+                    <span class="acc-title">Manage Groups</span>
+                    <div class="acc-actions">
+                        <button class="acc-btn chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+                    </div>
+                </div>
+                <div class="accordion-body">
+                    <div class="form-field">
+                        <span class="form-label">Tambah Grup Baru</span>
+                        <div style="display:flex; gap:6px;">
+                            <input type="text" id="newGroupNameInput" class="sidebar-input" placeholder="e.g., Kuliah, Financial...">
+                            <button class="btn-primary" onclick="createNewGroup()" style="width:auto; padding:0 12px; white-space:nowrap;">Add</button>
+                        </div>
+                    </div>
+                    <div id="groupsManagementList" style="margin-top:8px; display:flex; flex-direction:column; gap:4px;"></div>
                 </div>
             </div>
 
@@ -378,7 +420,7 @@
                 <div class="settings-section-label">Configuration</div>
                 <div class="form-field">
                     <label class="form-label">Start Date</label>
-                    <input type="date" id="startDateInput" class="sidebar-input">
+                    <input type="date" id="startDateInput" class="sidebar-input" placeholder="Pilih Tanggal">
                 </div>
                 <div class="form-field">
                     <label class="form-label">View Duration</label>
@@ -436,7 +478,7 @@
         <div class="sidebar-bottom">
             <div class="sidebar-bottom-row">
                 <button class="sidebar-item" onclick="toggleSettings(event)">
-                    <svg class="icon-main" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <svg class="icon-main" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1 2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     <span class="sidebar-label">Settings</span>
                 </button>
             </div>
@@ -500,22 +542,28 @@
         <button class="arrange-subitem" id="filter-phases-btn" onclick="setFilterMode('phases')">✦ Phases <svg class="check-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
     </div>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+
 <script>
     // --- STATE ---
     const LOCAL_KEY = 'myDailyCalendar_v4';
     
-    // Kita simpan durasi total dalam bulan agar kompatibel dengan logika sebelumnya
     const defaultData = {
         startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
-        duration: 36, // 3 Years default (36 bulan)
+        duration: 36, // 3 Years default
         theme: 'dark',
+        groups: [{ id: 'general', name: 'Umum' }],
         items: []
     };
 
     let appData = JSON.parse(localStorage.getItem(LOCAL_KEY)) || defaultData;
     let hiddenIds = new Set();
     let editId = null;
-    let currentMode = 'phase';
+    let activeGroupId = 'all'; 
+
+    // FLATPICKR INSTANCES
+    let fpStart, fpEnd, fpEvent, fpConfigStart;
 
     function parseLocalDate(dateStr) {
         return new Date(dateStr + 'T00:00:00');
@@ -525,14 +573,9 @@
         let y = parseInt(document.getElementById('durationYears').value) || 0;
         let m = parseInt(document.getElementById('durationMonths').value) || 0;
 
-        // Atur batasan
         if (y < 0) y = 0; if (y > 5) y = 5;
         if (m < 0) m = 0; if (m > 11) m = 11;
-        
-        // Mencegah durasi kosong (minimal 1 bulan)
-        if (y === 0 && m === 0) {
-            m = 1;
-        }
+        if (y === 0 && m === 0) m = 1;
 
         document.getElementById('durationYears').value = y;
         document.getElementById('durationMonths').value = m;
@@ -542,15 +585,40 @@
     }
 
     function init() {
-        document.getElementById('startDateInput').value = appData.startDate;
-        document.getElementById('startDateInput').onchange = (e) => {
-            appData.startDate = e.target.value;
-            saveAndRender();
+        if (!appData.groups || appData.groups.length === 0) {
+            appData.groups = [{ id: 'general', name: 'Umum' }];
+        }
+
+        populateGroupDropdowns();
+
+        // INISIALISASI FLATPICKR KALENDER
+        flatpickr.localize(flatpickr.l10ns.id); // Set ke Bahasa Indonesia (Januari, Februari, dsb)
+        
+        const fpOptions = { 
+            dateFormat: "Y-m-d", // Data asli yang dikirim ke sistem kalender
+            altInput: true,      // Membuat teks input pengganti yang cantik
+            altFormat: "j M Y",  // Menampilkan format seperti "1 Jan 2026"
+            disableMobile: "true" // Supaya tampilan HP tetap cantik pakai ini
         };
 
-        // Konversi total durasi bulan ke bentuk Tahun dan Bulan
+        fpStart = flatpickr("#phaseStartDate", fpOptions);
+        fpEnd = flatpickr("#phaseEndDate", fpOptions);
+        fpEvent = flatpickr("#eventDate", fpOptions);
+
+        fpConfigStart = flatpickr("#startDateInput", {
+            ...fpOptions,
+            onChange: function(selectedDates, dateStr) {
+                appData.startDate = dateStr;
+                saveAndRender();
+            }
+        });
+        fpConfigStart.setDate(appData.startDate);
+
         document.getElementById('durationYears').value = Math.floor(appData.duration / 12);
         document.getElementById('durationMonths').value = appData.duration % 12;
+
+        document.getElementById('modeSelect').value = 'phase';
+        onModeChange('phase');
 
         setTheme(appData.theme || 'dark');
         document.addEventListener('mousemove', updateTooltipPos);
@@ -597,7 +665,84 @@
         document.getElementById('icon-fs-shrink').style.display = isFS ? 'block' : 'none';
     });
 
-    // --- MAIN RENDER (MONTH-BY-MONTH GRID, 31 DAYS ACROSS) ---
+    // --- GROUPS MANAGEMENT LOGIC ───
+    function populateGroupDropdowns() {
+        const select = document.getElementById('itemGroupSelect');
+        if (!select) return;
+        select.innerHTML = '';
+        appData.groups.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.name;
+            select.appendChild(opt);
+        });
+    }
+
+    function createNewGroup() {
+        const input = document.getElementById('newGroupNameInput');
+        const name = input.value.trim();
+        if (!name) return;
+
+        const newGroup = {
+            id: 'g_' + Date.now(),
+            name: name
+        };
+
+        appData.groups.push(newGroup);
+        input.value = '';
+        
+        saveAndRender();
+        populateGroupDropdowns();
+    }
+
+    function deleteGroup(groupId) {
+        if (groupId === 'general') return;
+        
+        if (confirm('Hapus grup ini? Semua item di dalamnya akan dipindahkan otomatis ke grup Umum.')) {
+            appData.groups = appData.groups.filter(g => g.id !== groupId);
+            appData.items.forEach(item => {
+                if (item.groupId === groupId) item.groupId = 'general';
+            });
+            if (activeGroupId === groupId) activeGroupId = 'all';
+
+            saveAndRender();
+            populateGroupDropdowns();
+        }
+    }
+
+    function setActiveGroup(groupId) {
+        activeGroupId = groupId;
+        render();
+    }
+
+    function toggleGroupAccordion(groupId) {
+        if (!window.expandedGroups) window.expandedGroups = new Set(['general']);
+        if (window.expandedGroups.has(groupId)) {
+            window.expandedGroups.delete(groupId);
+        } else {
+            window.expandedGroups.add(groupId);
+        }
+        renderSidebarList();
+    }
+
+    function renderGroupsManagement() {
+        const list = document.getElementById('groupsManagementList');
+        if (!list) return;
+        list.innerHTML = '';
+
+        appData.groups.forEach(g => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: var(--card); border: 1px solid var(--border); border-radius: 6px;';
+            
+            row.innerHTML = `
+                <span style="font-size: 0.85rem; color: var(--text);">${g.name} ${g.id === 'general' ? '<span style="color: var(--text-muted); font-size: 0.75rem;">(Default)</span>' : ''}</span>
+                ${g.id !== 'general' ? `<button onclick="deleteGroup('${g.id}')" style="background:transparent; border:none; color:#e05252; cursor:pointer; font-size:0.75rem; padding:2px 6px; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='rgba(224,82,82,0.1)'" onmouseout="this.style.background='transparent'">Hapus</button>` : ''}
+            `;
+            list.appendChild(row);
+        });
+    }
+
+    // --- MAIN RENDER (MONTH-BY-MONTH GRID) ---
     function render() {
         const container = document.getElementById('yearsContainer');
         container.innerHTML = '';
@@ -605,8 +750,6 @@
         if(!appData.startDate) return;
 
         const startDt = parseLocalDate(appData.startDate);
-        
-        // Target end date (Duration in months)
         const targetEnd = new Date(startDt);
         targetEnd.setMonth(startDt.getMonth() + appData.duration);
         targetEnd.setDate(targetEnd.getDate() - 1); 
@@ -616,11 +759,9 @@
 
         let totalCount = 0; 
         let livedCount = 0;
-
         let currentYearNum = -1;
         let currentYearWrapper = null;
 
-        // Loop month by month starting from the 1st of the starting month
         let iterMonth = new Date(startDt.getFullYear(), startDt.getMonth(), 1);
         const endMonth = new Date(targetEnd.getFullYear(), targetEnd.getMonth(), 1);
 
@@ -628,7 +769,6 @@
             const y = iterMonth.getFullYear();
             const m = iterMonth.getMonth();
 
-            // Mulai render block tahun baru
             if (y !== currentYearNum) {
                 currentYearNum = y;
                 
@@ -640,11 +780,9 @@
                 divider.innerHTML = `<span>${y}</span><div class="line"></div>`;
                 currentYearWrapper.appendChild(divider);
 
-                // Buat Header Row untuk Tanggal (1 - 31)
                 const headerRow = document.createElement('div');
                 headerRow.className = 'month-row header-row';
                 
-                // Tempat kosong untuk ruang label bulan
                 const emptyLabel = document.createElement('div');
                 emptyLabel.className = 'month-label';
                 headerRow.appendChild(emptyLabel);
@@ -659,7 +797,6 @@
                 container.appendChild(currentYearWrapper);
             }
 
-            // Buat baris (row) untuk 1 bulan
             const monthRow = document.createElement('div');
             monthRow.className = 'month-row';
             
@@ -668,14 +805,11 @@
             mLabel.innerText = iterMonth.toLocaleString('en-US', { month: 'short' });
             monthRow.appendChild(mLabel);
 
-            // Cari tahu bulan ini punya berapa hari (28/29/30/31)
             const daysInMonth = new Date(y, m + 1, 0).getDate();
 
-            // Looping ke samping pasti 31 box (untuk menyejajarkan grid)
             for (let d = 1; d <= 31; d++) {
                 const box = document.createElement('div');
                 
-                // Jika tanggal melebihi total hari di bulan tersebut, kasih placeholder kosong tak terlihat
                 if (d > daysInMonth) {
                     box.className = 'day-box empty-placeholder';
                     monthRow.appendChild(box);
@@ -684,7 +818,6 @@
 
                 const curDt = new Date(y, m, d);
 
-                // Jika kotak harinya valid, tapi posisinya mendahului Start Date atau melebihi End Date, buat jadi samar
                 if (curDt < startDt || curDt > targetEnd) {
                     box.className = 'day-box out-of-bounds';
                     monthRow.appendChild(box);
@@ -699,12 +832,12 @@
                 totalCount++; 
 
                 let bgColor = '';
-                // Format Tooltip yang bersih: "Jan 15, 2024"
                 let tipHtml = `<div style="font-size:0.85rem; margin-bottom:4px; font-weight:500;">${curDt.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</div>`;
 
                 const activePhase = appData.items.find(i => {
                     if (i.type !== 'phase' || hiddenIds.has(i.id)) return false;
                     if (!(filterMode === 'all' || filterMode === 'phases')) return false;
+                    if (activeGroupId !== 'all' && (i.groupId || 'general') !== activeGroupId) return false;
                     return curDt >= parseLocalDate(i.startDate) && curDt <= parseLocalDate(i.endDate);
                 });
                 if (activePhase) {
@@ -715,6 +848,7 @@
                 const activeEvent = appData.items.find(i => {
                     if (i.type !== 'event' || hiddenIds.has(i.id)) return false;
                     if (!(filterMode === 'all' || filterMode === 'events')) return false;
+                    if (activeGroupId !== 'all' && (i.groupId || 'general') !== activeGroupId) return false;
                     return curDt.getTime() === parseLocalDate(i.date).getTime();
                 });
                 if (activeEvent) {
@@ -732,8 +866,6 @@
             }
 
             currentYearWrapper.appendChild(monthRow);
-            
-            // Maju 1 bulan
             iterMonth.setMonth(iterMonth.getMonth() + 1);
         }
 
@@ -746,7 +878,6 @@
 
     // --- FORM LOGIC ---
     function onModeChange(val) {
-        currentMode = val;
         document.getElementById('field-phase-dates').style.display = val === 'phase' ? 'flex' : 'none';
         document.getElementById('field-event-date').style.display = val === 'event' ? 'flex' : 'none';
     }
@@ -754,11 +885,14 @@
     function submitItem() {
         const name = document.getElementById('itemName').value.trim();
         const color = document.getElementById('itemColor').value;
+        const groupId = document.getElementById('itemGroupSelect').value || 'general';
+        const selectedType = document.getElementById('modeSelect').value; 
+        
         if (!name) return;
 
-        let newItem = { id: editId || Date.now(), type: currentMode, name, color };
+        let newItem = { id: editId || Date.now(), type: selectedType, name, color, groupId };
 
-        if (currentMode === 'phase') {
+        if (selectedType === 'phase') {
             newItem.startDate = document.getElementById('phaseStartDate').value;
             newItem.endDate = document.getElementById('phaseEndDate').value;
             if (!newItem.startDate || !newItem.endDate) return;
@@ -789,12 +923,14 @@
         
         document.getElementById('itemName').value = item.name;
         document.getElementById('itemColor').value = item.color;
+        document.getElementById('itemGroupSelect').value = item.groupId || 'general';
         
+        // Memakai instance flatpickr untuk setup tanggal pas mode edit
         if (item.type === 'phase') {
-            document.getElementById('phaseStartDate').value = item.startDate;
-            document.getElementById('phaseEndDate').value = item.endDate;
+            fpStart.setDate(item.startDate);
+            fpEnd.setDate(item.endDate);
         } else {
-            document.getElementById('eventDate').value = item.date;
+            fpEvent.setDate(item.date);
         }
         
         document.getElementById('form-acc-title').innerText = "Edit Data";
@@ -806,12 +942,17 @@
     function cancelEdit() {
         editId = null;
         document.getElementById('itemName').value = '';
-        document.getElementById('phaseStartDate').value = '';
-        document.getElementById('phaseEndDate').value = '';
-        document.getElementById('eventDate').value = '';
+        
+        // Bersihkan UI kalender flatpickr
+        fpStart.clear();
+        fpEnd.clear();
+        fpEvent.clear();
+
+        document.getElementById('itemGroupSelect').value = appData.groups[0]?.id || 'general';
         document.getElementById('form-acc-title').innerText = "Add New Event";
         document.getElementById('btnSubmitItem').innerText = "Save Data";
         document.getElementById('btnCancelEdit').style.display = 'none';
+        
         document.getElementById('modeSelect').value = 'phase';
         onModeChange('phase');
     }
@@ -823,12 +964,14 @@
         saveAndRender(); closeDotMenu();
     }
 
-    // --- SIDEBAR LIST & SORTING ---
+    // --- SIDEBAR LIST (FOLDERS ACCORDION SYSTEM) ---
     let sortMode = 'none', filterMode = 'all';
 
     function renderSidebarList() {
-        const list = document.getElementById('viewListContainer');
-        list.innerHTML = '';
+        renderGroupsManagement();
+
+        const container = document.getElementById('viewListContainer');
+        container.innerHTML = '';
         
         const labelChip = document.getElementById('arrange-label-chip');
         const chipParts = [];
@@ -837,54 +980,111 @@
         if (chipParts.length) { labelChip.textContent = chipParts.join(' · '); labelChip.style.display = 'inline'; }
         else labelChip.style.display = 'none';
 
-        let items = [...appData.items];
-        if (filterMode === 'events') items = items.filter(i => i.type === 'event');
-        else if (filterMode === 'phases') items = items.filter(i => i.type === 'phase');
+        const allRow = document.createElement('div');
+        allRow.className = 'all-groups-row';
+        allRow.style.cssText = `display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; border-radius: 6px; margin-bottom: 8px; background: ${activeGroupId === 'all' ? 'var(--border-light)' : 'var(--card)'}; border: 1px solid var(--border);`;
+        allRow.onclick = () => setActiveGroup('all');
+        allRow.innerHTML = `
+            <span class="group-radio-dot ${activeGroupId === 'all' ? 'active' : ''}"></span>
+            <span style="font-size: 0.85rem; color: var(--text); font-weight: 600;">📁 Semua Grup (Lihat Semua)</span>
+        `;
+        container.appendChild(allRow);
+
+        let baseItems = [...appData.items];
+        if (filterMode === 'events') baseItems = baseItems.filter(i => i.type === 'event');
+        else if (filterMode === 'phases') baseItems = baseItems.filter(i => i.type === 'phase');
 
         const getDur = (i) => i.type === 'phase' ? parseLocalDate(i.endDate) - parseLocalDate(i.startDate) : 0;
         const getStart = (i) => i.type === 'phase' ? parseLocalDate(i.startDate).getTime() : parseLocalDate(i.date).getTime();
 
-        if (sortMode === 'asc') items.sort((a,b) => getDur(a) - getDur(b));
-        else if (sortMode === 'desc') items.sort((a,b) => getDur(b) - getDur(a));
-        else if (sortMode === 'earliest') items.sort((a,b) => getStart(a) - getStart(b));
-        else if (sortMode === 'latest') items.sort((a,b) => getStart(b) - getStart(a));
-        else if (sortMode === 'custom') items = getCustomOrderedItems(items);
+        if (sortMode === 'asc') baseItems.sort((a,b) => getDur(a) - getDur(b));
+        else if (sortMode === 'desc') baseItems.sort((a,b) => getDur(b) - getDur(a));
+        else if (sortMode === 'earliest') baseItems.sort((a,b) => getStart(a) - getStart(b));
+        else if (sortMode === 'latest') baseItems.sort((a,b) => getStart(b) - getStart(a));
+        else if (sortMode === 'custom') baseItems = getCustomOrderedItems(baseItems);
 
-        items.forEach(item => {
-            const el = document.createElement('div');
-            el.className = 'list-item';
+        if (!window.expandedGroups) {
+            window.expandedGroups = new Set(['general']);
+        }
+
+        appData.groups.forEach(group => {
+            const groupItems = baseItems.filter(item => (item.groupId || 'general') === group.id);
+            const isExpanded = window.expandedGroups.has(group.id);
+
+            const groupAcc = document.createElement('div');
+            groupAcc.className = 'group-accordion';
+            groupAcc.style.cssText = 'margin-bottom: 6px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;';
+
+            const groupHeader = document.createElement('div');
+            groupHeader.style.cssText = `display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; cursor: pointer; background: ${activeGroupId === group.id ? 'var(--border-light)' : 'var(--surface)'}; transition: background 0.2s;`;
             
-            const timeLabel = item.type === 'phase' 
-                ? `${item.startDate} to ${item.endDate}` 
-                : item.date;
-
-            const moveBtns = sortMode === 'custom' ? `
-                <div class="move-btns">
-                    <button class="move-btn" onclick="moveItem(${item.id}, -1)"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg></button>
-                    <button class="move-btn" onclick="moveItem(${item.id}, 1)"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
-                </div>` : '';
-
-            el.innerHTML = `
-                <label class="event-checkbox-wrapper">
-                    <input type="checkbox" class="event-checkbox-input" ${!hiddenIds.has(item.id) ? 'checked' : ''} onchange="toggleFilter(${item.id})">
-                    <div class="event-checkbox-box" style="--box-color: ${item.color}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-                    <div class="event-text">
-                        <span class="event-label">${item.name}</span>
-                        <span class="event-time-label">${timeLabel}</span>
-                    </div>
-                </label>
-                ${moveBtns}
-                <button class="dot-btn" onclick="openDotMenu(event, ${item.id})"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+            const leftPart = document.createElement('div');
+            leftPart.style.cssText = 'display: flex; align-items: center; gap: 8px; flex: 1;';
+            leftPart.onclick = () => setActiveGroup(group.id);
+            leftPart.innerHTML = `
+                <span class="group-radio-dot ${activeGroupId === group.id ? 'active' : ''}"></span>
+                <span style="font-size: 0.85rem; font-weight: 500; color: var(--text);">${group.name} (${groupItems.length})</span>
             `;
 
-            if(sortMode === 'custom') {
-                el.setAttribute('draggable', 'true');
-                el.addEventListener('dragstart', (e) => { e.dataTransfer.effectAllowed='move'; _dragId=item.id; el.classList.add('dragging'); });
-                el.addEventListener('dragend', () => { document.querySelectorAll('.list-item').forEach(x=>x.classList.remove('dragging','drag-over-top','drag-over-bottom')); _dragId=null; });
-                el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.remove('drag-over-top','drag-over-bottom'); const rect = el.getBoundingClientRect(); if(e.clientY < rect.top+rect.height/2) el.classList.add('drag-over-top'); else el.classList.add('drag-over-bottom'); });
-                el.addEventListener('drop', (e) => { e.preventDefault(); if(_dragId && _dragId!==item.id) { const rect = el.getBoundingClientRect(); dropItem(_dragId, item.id, e.clientY < rect.top+rect.height/2); }});
+            const rightPart = document.createElement('div');
+            rightPart.className = 'acc-actions';
+            const chevBtn = document.createElement('button');
+            chevBtn.className = 'acc-btn';
+            chevBtn.style.cssText = 'background: transparent; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;';
+            chevBtn.onclick = (e) => { e.stopPropagation(); toggleGroupAccordion(group.id); };
+            chevBtn.innerHTML = `<svg class="chevron" viewBox="0 0 24 24" style="width: 14px; height: 14px; transition: transform 0.2s; ${isExpanded ? 'transform: rotate(180deg);' : ''}"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+            rightPart.appendChild(chevBtn);
+
+            groupHeader.appendChild(leftPart);
+            groupHeader.appendChild(rightPart);
+            groupAcc.appendChild(groupHeader);
+
+            const groupBody = document.createElement('div');
+            groupBody.style.cssText = `display: ${isExpanded ? 'flex' : 'none'}; flex-direction: column; padding: 6px 8px; background: rgba(0,0,0,0.12); gap: 2px;`;
+
+            if (groupItems.length === 0) {
+                const emptyHint = document.createElement('div');
+                emptyHint.style.cssText = 'font-size: 0.75rem; color: var(--text-muted); padding: 6px; font-style: italic;';
+                emptyHint.textContent = 'Tidak ada item';
+                groupBody.appendChild(emptyHint);
+            } else {
+                groupItems.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'list-item';
+                    
+                    const timeLabel = item.type === 'phase' ? `${item.startDate} to ${item.endDate}` : item.date;
+                    const moveBtns = sortMode === 'custom' ? `
+                        <div class="move-btns">
+                            <button class="move-btn" onclick="moveItem(${item.id}, -1)"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg></button>
+                            <button class="move-btn" onclick="moveItem(${item.id}, 1)"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+                        </div>` : '';
+
+                    el.innerHTML = `
+                        <label class="event-checkbox-wrapper">
+                            <input type="checkbox" class="event-checkbox-input" ${!hiddenIds.has(item.id) ? 'checked' : ''} onchange="toggleFilter(${item.id})">
+                            <div class="event-checkbox-box" style="--box-color: ${item.color}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                            <div class="event-text">
+                                <span class="event-label">${item.name}</span>
+                                <span class="event-time-label">${timeLabel}</span>
+                            </div>
+                        </label>
+                        ${moveBtns}
+                        <button class="dot-btn" onclick="openDotMenu(event, ${item.id})"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                    `;
+
+                    if(sortMode === 'custom') {
+                        el.setAttribute('draggable', 'true');
+                        el.addEventListener('dragstart', (e) => { e.dataTransfer.effectAllowed='move'; _dragId=item.id; el.classList.add('dragging'); });
+                        el.addEventListener('dragend', () => { document.querySelectorAll('.list-item').forEach(x=>x.classList.remove('dragging','drag-over-top','drag-over-bottom')); _dragId=null; });
+                        el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.remove('drag-over-top','drag-over-bottom'); const rect = el.getBoundingClientRect(); if(e.clientY < rect.top+rect.height/2) el.classList.add('drag-over-top'); else el.classList.add('drag-over-bottom'); });
+                        el.addEventListener('drop', (e) => { e.preventDefault(); if(_dragId && _dragId!==item.id) { const rect = el.getBoundingClientRect(); dropItem(_dragId, item.id, e.clientY < rect.top+rect.height/2); }});
+                    }
+                    groupBody.appendChild(el);
+                });
             }
-            list.appendChild(el);
+
+            groupAcc.appendChild(groupBody);
+            container.appendChild(groupAcc);
         });
     }
 
@@ -970,8 +1170,18 @@
     function updateTooltipPos(e) { const t=document.getElementById('tooltip'); if(t.style.opacity==='0')return; let x=e.clientX+15, y=e.clientY-40; if(x+t.offsetWidth>window.innerWidth) x=e.clientX-t.offsetWidth-15; t.style.left=x+'px'; t.style.top=y+'px'; }
     
     function setTheme(t) {
-        document.body.setAttribute('data-theme', t); appData.theme = t; localStorage.setItem(LOCAL_KEY, JSON.stringify(appData));
+        document.body.setAttribute('data-theme', t); 
+        appData.theme = t; 
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(appData));
         document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-theme')===t));
+        
+        // Sesuaikan warna tema popup Flatpickr kalendernya juga
+        const fpThemeLink = document.getElementById('fp-theme');
+        if (t === 'light' || t === 'miku') {
+            fpThemeLink.href = "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
+        } else {
+            fpThemeLink.href = "https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css";
+        }
     }
 
     function saveAndRender() { localStorage.setItem(LOCAL_KEY, JSON.stringify(appData)); render(); }
@@ -980,7 +1190,6 @@
     function executeClearCache() { localStorage.removeItem(LOCAL_KEY); location.reload(); }
 
     // --- GITHUB SYNC LOGIC ---
-    // Nama file statis sesuai request
     const GH_FILE_PATH = 'projectcalendar-ryg.json'; 
 
     function ghLoadCreds() {
@@ -1024,14 +1233,15 @@
             }
 
             const data = await res.json();
-            
-            // Decode Base64 dari GitHub (aman untuk karakter unik/emoji)
             const decodedContent = decodeURIComponent(escape(atob(data.content)));
             
-            // Timpa appData lokal dengan data dari GitHub
             appData = JSON.parse(decodedContent);
+            if (!appData.groups || appData.groups.length === 0) {
+                appData.groups = [{ id: 'general', name: 'Umum' }];
+            }
+
             saveAndRender(); 
-            init(); // Re-init form di UI
+            init(); 
             
             statusEl.innerText = '✅ Data berhasil dimuat!';
             statusEl.style.color = '#52e08a';
@@ -1057,13 +1267,11 @@
         statusEl.style.color = 'var(--text-muted)';
 
         const contentString = JSON.stringify(appData, null, 2);
-        // Encode ke Base64 (aman untuk karakter unik/emoji)
         const encodedContent = btoa(unescape(encodeURIComponent(contentString)));
 
         try {
             let sha = '';
             
-            // 1. Cek apakah file sudah ada sebelumnya untuk mendapatkan "sha" (syarat update file di GitHub)
             const getRes = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${GH_FILE_PATH}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1078,12 +1286,11 @@
                 throw new Error(`Cek file gagal: ${getRes.statusText}`);
             }
 
-            // 2. Upload/Update file ke Repo
             const putBody = {
                 message: `Update daily calendar data: ${new Date().toLocaleString()}`,
                 content: encodedContent
             };
-            if (sha) putBody.sha = sha; // Tambahkan sha jika file sudah ada sebelumnya
+            if (sha) putBody.sha = sha; 
 
             const putRes = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${GH_FILE_PATH}`, {
                 method: 'PUT',
